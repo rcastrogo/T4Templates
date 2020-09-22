@@ -1,0 +1,66 @@
+; ===========================================================
+; Negocio.Entities.Contacto
+; ===========================================================
+#Contacto-Contactos
+id                            , Integer
+idCA                          , Integer
+contacto                      
+direccion                     
+codigoPostal                  
+idProvincia                   , Integer
+email                         
+telefono                      
+fax                           
+poblacion                     
+autoridad                     
+
+
+; ===========================================================
+; Negocio.Entities.Grupo
+; ===========================================================
+#Grupo-Grupos
+id                            , Integer
+descripcion                   
+
+
+; ===========================================================
+; Negocio.Entities.Pais
+; ===========================================================
+#Pais-Paises
+id                            , Integer
+idGrupo                       , Integer
+descripcion                   
+
+
+; ===========================================================
+; Negocio.Entities.Producto
+; ===========================================================
+#Producto-Productos
+id                            , Integer
+descripcion                   
+
+
+; ===========================================================
+; Negocio.Entities.Programa
+; ===========================================================
+#Programa-Programas
+id                            , Integer
+idCA                          , Integer
+idProponente                  , Integer
+codigo                        
+estado                        
+puntuacionMARM                , Integer
+puntuacionCA                  , Integer
+denominacion                  
+objetivos                     
+destinatarios                 
+incremento                    
+observaciones                 
+f_Presentacion                , datetime
+f_Inicio                      , datetime
+f_Finalizacion                , datetime
+f_INSERT                      , datetime
+f_UPDATE                      , datetime
+usuario                       
+
+

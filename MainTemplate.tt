@@ -1,0 +1,108 @@
+﻿<#@ template language="VB" debug="true" hostSpecific="true" #>
+<#@ output extension=".txt" #>
+<#@ Assembly Name="System.dll" #>
+<#@ Assembly Name="System.Core.dll" #>
+<#@ Assembly Name="System.Windows.Forms.dll" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.IO" #>
+<#@ import namespace="System.Diagnostics" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Collections" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="Microsoft.VisualBasic" #>
+
+<#@ include file="IRepositoryTemplate.tt" #> 
+<#@ include file="RepositoryClientTemplate.tt" #>
+<#@ include file="EntityTemplate.tt" #>
+
+<#
+
+  Dim __Names as New List(of String)
+  Dim __CollectionNames as New Dictionary(of string, string)
+  Dim __Entities as New Dictionary(of string, string())
+   
+  if File.Exists(me.Host.ResolvePath("schema.txt")) then
+    Using __F As New IO.StreamReader(me.Host.ResolvePath("schema.txt"))
+        Dim __Key As String = ""
+        Dim __Value As New Text.StringBuilder()
+        Dim __Fields as List(of String) = New List(of String)
+        Dim __currentKey as String = ""
+        While __F.Peek <> -1
+          Dim __line As String = __F.ReadLine().Trim()
+          If __line.Length = 0 Then Continue While          
+          If __line.StartsWith(";") Then Continue While
+          If __line.StartsWith("#") Then            
+            if __currentKey.length>0 then
+              __Entities.add(__currentKey , __Fields.ToArray())              
+            end if
+            __currentKey = __line.Substring(1).split("-")(0)
+            __Names.Add(__currentKey)
+            __CollectionNames.Add(__currentKey, __line.Substring(1).split("-")(1))
+            __Fields = New List(of String)
+          else
+            dim __values as string() =  __line.split(",")
+            if __values.length>1 then
+              __Fields.add( string.format("{0},{1}", __values(0).Trim(), __values(1).Trim()))  
+            else
+              __Fields.add( string.format("{0},{1}", __values(0).Trim(), "String")) 
+            end if
+          End If
+        End While
+        __Entities.add(__currentKey , __Fields.ToArray())   
+    End Using  
+  End if
+
+  With New MyGenerator()					
+		.Names = __Names.ToArray()
+		.Entities = __Entities
+		.ColletionEntities = __CollectionNames
+		.Run(me.Host)
+  End with
+
+#>
+
+
+<#+
+Public Class MyGenerator 
+   
+    Public Names() As String
+    Public Entities as Dictionary(of string, string())  	 	
+    Public ColletionEntities as Dictionary(of string, string) 
+
+    Public Sub Run(host as object)   		             	
+  
+      Dim __file as String
+  	    
+	    For Each __Name As string In Names
+	      Dim T As IRepositoryTemplate = New IRepositoryTemplate()
+        T.EntityName= __Name  
+        __file = host.ResolvePath(".") & "\Client\Interfaces\I" & __Name & "Repository.vb"                    
+        RenderToFile(__file, T.TransformText)
+        
+        Dim T2 As RepositoryClientTemplate = New RepositoryClientTemplate()
+        T2.EntityName= __Name  
+        __file = host.ResolvePath(".") & "\Client\Clients\" & __Name & "RepositoryClient.vb"                    
+        RenderToFile(__file, T2.TransformText)
+        
+        Dim T3 As EntityTemplate = New EntityTemplate()
+        T3.EntityName= __Name        
+        T3.Fields = Entities(__Name).ToArray()  
+        __file = host.ResolvePath(".") & "\Client\Entities\" & __Name & ".vb"                    
+        RenderToFile(__file, T3.TransformText)                   
+              
+	    Next	     
+	    
+    End Sub
+    
+    Private Sub RenderToFile(fileName as string, data as string)
+      
+      If File.Exists(fileName) then File.Delete(fileName)    
+      Directory.CreateDirectory(IO.Path.GetDirectoryName(fileName))
+      
+      IO.File.WriteAllText(fileName, data , System.Text.Encoding.Default())
+            
+    End Sub
+    
+End Class
+
+#>
